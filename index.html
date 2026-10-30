@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Household Calendar</title>
+<meta name="theme-color" content="#2b5f8c">
+<meta name="description" content="Household calendar with work schedules, tasks and trash days">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Household">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f2f5f3;--card:#fff;--ink:#17262b;--mute:#66767b;--line:#dbe3df;--acc:#2b5f8c;--accfg:#fff;--warn:#b4531a;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10181b;--card:#182327;--ink:#e8efec;--mute:#93a4a8;--line:#2a3a3f;--acc:#6fa8dc;--accfg:#0d1a20;--warn:#f0a06a}}
+:root[data-theme="dark"]{--bg:#10181b;--card:#182327;--ink:#e8efec;--mute:#93a4a8;--line:#2a3a3f;--acc:#6fa8dc;--accfg:#0d1a20;--warn:#f0a06a}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.4 "DM Sans",system-ui,sans-serif}
+main{max-width:640px;margin:0 auto;padding:14px}
+h1,h2{font-family:"Bricolage Grotesque","DM Sans",sans-serif;margin:0}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 12px}
+button.p{background:var(--acc);color:var(--accfg);border-color:var(--acc);font-weight:500}
+button.d{color:var(--warn)}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:10px}
+.ctl{display:flex;align-items:center;gap:8px;margin-left:auto;min-width:0}
+.top h1{font-size:19px;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mw{position:relative}
+#pf{display:flex;align-items:center;max-width:110px;min-width:0;flex:0 1 auto;overflow:hidden;white-space:nowrap}
+.mw{flex:0 0 auto}
+.ib{display:flex;align-items:center;justify-content:center;width:38px;height:38px;padding:0;flex:0 0 auto}
+.ib[hidden]{display:none}
+.ib svg{width:19px;height:19px}
+.ib.spin svg{animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.ib.spin svg{animation:none}}
+#dd{position:absolute;right:0;top:calc(100% + 6px);min-width:200px;width:max-content;max-width:calc(100vw - 28px);background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px;z-index:15;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+#dd[hidden]{display:none}
+#dd button{display:block;width:100%;text-align:left;border:0;background:none;padding:10px}
+#dd button:hover{background:var(--bg)}
+.top select{width:auto;padding:8px}
+.nav{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.nav h2{flex:1;font-size:19px;text-transform:capitalize}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.dow{text-align:center;font-size:12px;color:var(--mute);padding:2px 0}
+.c{min-height:62px;border-radius:10px;background:var(--card);border:1px solid var(--line);padding:4px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:3px;font-size:14px}
+.c.o{background:none;border-color:transparent;cursor:default}
+.c{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+#m.on .sheet{animation:up .22s ease-out}
+@keyframes up{from{transform:translateY(100%)}to{transform:none}}
+@media (prefers-reduced-motion:reduce){#m.on .sheet{animation:none}}
+.c.t b{color:var(--acc)}
+.c.tr{border-color:transparent}
+.c.tr b{color:inherit}
+.c.t.tr b{text-decoration:underline}
+.c.tr .dots i{box-shadow:0 0 0 1px #fff}
+.c.s{border:2px solid var(--acc)}
+.c.tr.s{border-color:var(--ink)}
+.dots{display:flex;gap:2px;flex-wrap:wrap;justify-content:center;min-height:8px}
+.dots i{width:6px;height:6px;border-radius:50%;display:block}
+.tt{font-size:9px;line-height:10px;min-height:10px;font-weight:700}
+.bar .now{position:absolute;top:-4px;bottom:-4px;width:2px;margin-left:-1px;background:#e5484d;border-radius:1px;z-index:3;pointer-events:none}
+.bar .now::before{content:"";position:absolute;top:-3px;left:-2px;width:6px;height:6px;border-radius:50%;background:#e5484d}
+.bar .dl{position:absolute;top:-3px;bottom:-3px;width:4px;margin-left:-2px;border-radius:2px;border:1px solid var(--card)}
+.wk{display:flex;flex-direction:column;gap:2px;width:100%}
+.wk i{display:block;height:11px;border-radius:3px;font:700 8px/11px "DM Sans",sans-serif;font-style:normal;text-align:center;color:#fff;text-shadow:0 0 2px rgba(0,0,0,.55)}
+.wk i.off{opacity:.18}
+.lg{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--mute);margin-top:8px;align-items:center}
+.lg i{display:inline-block;vertical-align:middle;margin-right:5px}
+.panel{margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.ph{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.ph h2{flex:1;font-size:18px;text-transform:capitalize}
+.sub{font-size:13px;color:var(--mute);margin:12px 0 6px;font-weight:700}
+.rib{display:grid;grid-template-columns:64px 1fr;gap:8px;align-items:center;margin:5px 0;font-size:13px}
+.rib span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar{position:relative;height:22px;border-radius:6px;background:repeating-linear-gradient(90deg,transparent 0 calc(100%/4 - 1px),var(--line) calc(100%/4 - 1px) calc(100%/4));border:1px solid var(--line)}
+.bar .w{position:absolute;top:0;bottom:0;border-radius:5px;opacity:.35}
+.bar .k{position:absolute;top:3px;width:14px;height:14px;margin-left:-7px;border-radius:50%;border:2px solid var(--card)}
+.ax{display:grid;grid-template-columns:64px 1fr;gap:8px;font-size:11px;color:var(--mute)}
+.ax div{display:flex;justify-content:space-between}
+.task{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-top:1px solid var(--line)}
+.task input{width:20px;height:20px;margin-top:2px;accent-color:var(--acc)}
+.task .b{flex:1;cursor:pointer}
+.task.dn .ti{text-decoration:line-through;color:var(--mute)}
+.meta{font-size:12.5px;color:var(--mute);display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px}
+.warn{color:var(--warn)}
+.empty{color:var(--mute);padding:8px 0}
+#m{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-end;justify-content:center;z-index:20}
+#m.on{display:flex}
+.sheet{background:var(--card);width:100%;max-width:560px;max-height:92%;overflow-y:auto;overflow-x:hidden;border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))}
+.sheet h2{font-size:19px;margin-bottom:10px}
+label{display:block;font-size:13px;color:var(--mute);margin:10px 0 3px}
+input[type=text],input[type=date],input[type=time],input[type=number],select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+input[type=color]{width:44px;height:36px;border:1px solid var(--line);border-radius:8px;padding:2px;background:var(--bg)}
+.row{display:flex;gap:8px;align-items:center}
+.row>*{flex:1}
+.hr{display:grid;grid-template-columns:72px 24px 1fr 1fr;gap:6px;align-items:center;margin:5px 0}
+.hr small{display:block;font-size:11px;color:var(--mute)}
+.hr input[type=checkbox]{width:20px;height:20px;accent-color:var(--acc)}
+#toasts{position:fixed;left:10px;right:10px;top:calc(8px + env(safe-area-inset-top,0px));z-index:40;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{pointer-events:auto;max-width:520px;width:100%;margin:0 auto;background:var(--card);border:1px solid var(--line);border-left:5px solid var(--acc);border-radius:12px;padding:10px 12px;box-shadow:0 8px 24px rgba(0,0,0,.22);display:flex;gap:10px;align-items:flex-start;animation:dn .22s ease-out}
+.toast div{flex:1;min-width:0}
+.toast b{display:block}
+.toast span{font-size:13px;color:var(--mute)}
+.toast button{padding:4px 8px}
+@keyframes dn{from{transform:translateY(-120%)}to{transform:none}}
+@media (prefers-reduced-motion:reduce){.toast{animation:none}}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.row>*,.hr>*{min-width:0}
+.sheet input,.sheet select{min-width:0;max-width:100%}
+.acts .sp{flex:1}
+.mem{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
+.mem span{flex:1}
+</style>
+<script>
+var deferredInstall=null;
+(function(){
+ if(!/^https?:$/.test(location.protocol))return;
+ try{
+  var iconC=function(n){var c=document.createElement('canvas');c.width=c.height=n;var x=c.getContext('2d');
+   x.fillStyle='#2b5f8c';x.fillRect(0,0,n,n);var m=n*.26,w=n-2*m,t=n*.3;
+   x.fillStyle='#fff';x.fillRect(m,t,w,n*.44);x.fillStyle='#1b3f5e';x.fillRect(m,t,w,n*.1);
+   x.fillRect(m+w*.2,t-n*.06,n*.04,n*.1);x.fillRect(m+w*.76,t-n*.06,n*.04,n*.1);
+   x.fillStyle='#2b5f8c';for(var r=0;r<2;r++)for(var q=0;q<3;q++)x.fillRect(m+w*(.1+q*.3),t+n*.17+r*n*.12,w*.2,n*.08);
+   return c};var icon=function(n){return iconC(n).toDataURL('image/png')};
+  var base=location.href.split('#')[0].split('?')[0];
+  var mf={name:'Household Calendar',short_name:'Household',description:'Household calendar with work schedules, tasks and trash days',
+   start_url:base,scope:new URL('./',base).href,display:'standalone',orientation:'portrait',background_color:'#10181b',theme_color:'#2b5f8c',
+   icons:[{src:icon(192),sizes:'192x192',type:'image/png',purpose:'any maskable'},{src:icon(512),sizes:'512x512',type:'image/png',purpose:'any maskable'}]};
+  var l=document.createElement('link');l.rel='manifest';l.href='data:application/json;base64,'+btoa(JSON.stringify(mf));document.head.appendChild(l);
+  var a=document.createElement('link');a.rel='apple-touch-icon';a.href=icon(180);document.head.appendChild(a);
+  var f=document.createElement('link');f.rel='icon';f.type='image/png';f.href=icon(64);document.head.appendChild(f);
+  try{var dpr=window.devicePixelRatio||1,sc=document.createElement('canvas');sc.width=Math.round(screen.width*dpr);sc.height=Math.round(screen.height*dpr);var sx=sc.getContext('2d');sx.fillStyle='#10181b';sx.fillRect(0,0,sc.width,sc.height);var sz=sc.width*.25;sx.drawImage(iconC(256),(sc.width-sz)/2,(sc.height-sz)/2,sz,sz);var st=document.createElement('link');st.rel='apple-touch-startup-image';st.href=sc.toDataURL('image/png');document.head.appendChild(st)}catch(e){}
+ }catch(e){}
+})();
+window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferredInstall=e;try{buildMenu()}catch(x){}});
+window.addEventListener('appinstalled',function(){deferredInstall=null;try{buildMenu()}catch(x){}});
+</script>
+</head>
+<body>
+<main>
+ <div class="top"><h1 id="h1"></h1><div class="ctl"><button id="pf"></button><button id="upd" class="ib"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></button><button id="up" class="ib p" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg></button><div class="mw"><button id="mn" aria-haspopup="true" aria-expanded="false"></button><div id="dd" hidden></div></div></div></div>
+ <div class="meta" id="gb" style="margin:-4px 0 8px"></div>
+ <div class="nav"><h2 id="mt"></h2><button id="pv">‹</button><button id="td"></button><button id="nx">›</button></div>
+ <div class="grid" id="g"></div>
+ <div class="lg" id="lgd"></div>
+ <div class="lg" id="tlg"></div>
+ <section class="panel" id="p"></section>
+</main>
+<div id="m"><div class="sheet" id="sh"></div></div>
+<div id="toasts" aria-live="polite"></div>
+<script>
+var NL={'Household calendar':'Huishoudagenda','Members':'Leden','Today':'Vandaag','Previous month':'Vorige maand','Next month':'Volgende maand','Language':'Taal',
+'Work day (one row per person)':'Werkdag (één rij per persoon)','Task':'Taak','Letter = shift (M, A, N, D)':'Letter = dienst (O, M, N, D)',
+'Mon':'Ma','Tue':'Di','Wed':'Wo','Thu':'Do','Fri':'Vr','Sat':'Za','Sun':'Zo',
+'Add task':'Taak toevoegen','Add the people in your household to set their work hours and assign tasks.':'Voeg de huisgenoten toe om hun werktijden in te stellen en taken toe te wijzen.','Add members':'Leden toevoegen',
+'Work hours and tasks':'Werktijden en taken','Shaded = working. Dots = timed tasks.':'Gekleurd = aan het werk. Stippen = taken met een tijd.','Tasks':'Taken',
+'Nothing planned. Add a chore or goal for this day.':'Niets gepland. Voeg een klusje of doel toe voor deze dag.','Anyone':'Iedereen','Repeats daily':'Herhaalt dagelijks','Repeats weekly':'Herhaalt wekelijks',
+'During work hours':'Tijdens werktijd','Mark done':'Markeer als klaar','Housekeeping':'Huishouden','Goal':'Doel','Other':'Overig',
+'Household members':'Huisgenoten','No members yet.':'Nog geen leden.','Edit hours':'Werktijden wijzigen','Add member':'Lid toevoegen','Done':'Klaar',
+'Edit member':'Lid wijzigen','New member':'Nieuw lid','Name':'Naam','Schedule repeats every (days)':'Rooster herhaalt elke (dagen)','Day 1 falls on':'Dag 1 valt op',
+'Hours for each day of the cycle (uncheck days off). For a night shift, set the end earlier than the start, like 22:00 to 06:00.':'Uren voor elke dag van de cyclus (vink vrije dagen uit). Stel voor een nachtdienst het einde eerder in dan het begin, bijvoorbeeld 22:00 tot 06:00.',
+'Remove':'Verwijderen','Cancel':'Annuleren','Save member':'Lid opslaan','Day':'Dag','Works day':'Werkt dag','Shift label (optional)':'Dienstnaam (optioneel)',
+'Morning shift':'Ochtenddienst','Afternoon shift':'Middagdienst','Night shift':'Nachtdienst','Daytime shift':'Dagdienst',
+'Edit task':'Taak wijzigen','New task':'Nieuwe taak','Vacuum the living room':'De woonkamer stofzuigen','Date':'Datum','Time (optional)':'Tijd (optioneel)','Assigned to':'Toegewezen aan','Type':'Type','Repeat':'Herhaling',
+'Does not repeat':'Herhaalt niet','Daily':'Dagelijks','Weekly':'Wekelijks','Delete':'Verwijderen','Save task':'Taak opslaan',
+'is working then':'werkt dan','Pick another time or person.':'Kies een ander tijdstip of een andere persoon.','until':'tot','then':'daarna','off':'vrij','Unemployed (no work schedule)':'Werkloos (geen werkrooster)','unemployed':'werkloos','Trash':'Afval','Trash days':'Afvalkalender','Trash day':'Afvaldag','Add the trash types your municipality collects. Each type gets its own color on the calendar.':'Voeg de afvalsoorten toe die jouw gemeente ophaalt. Elke soort krijgt een eigen kleur in de agenda.','Every week':'Elke week','Every':'Elke','weeks':'weken','Edit':'Wijzigen','Add trash type':'Afvalsoort toevoegen','Use example schedule':'Voorbeeldschema gebruiken','Edit trash type':'Afvalsoort wijzigen','New trash type':'Nieuwe afvalsoort','A known pickup date':'Een bekende ophaaldatum','Repeat every (weeks, 0 = only extra dates)':'Herhaal elke (weken, 0 = alleen extra data)','Extra pickup dates':'Extra ophaaldata','Skipped dates (holidays)':'Overgeslagen data (feestdagen)','Add':'Toevoegen','Only extra dates':'Alleen extra data','Save':'Opslaan','Time off':'Verlof','Vacation':'Vakantie','Day off':'Vrije dag','Add time off':'Verlof toevoegen','From':'Van','To (optional)':'Tot en met (optioneel)','Back':'Terug','No time off planned.':'Geen verlof gepland.','Person':'Persoon','Add members first to set time off.':'Voeg eerst leden toe om verlof in te stellen.','Hold a date to add time off':'Houd een datum ingedrukt om verlof toe te voegen','Put outside by':'Buiten zetten voor','Put outside by (pickup time)':'Buiten zetten voor (ophaaltijd)','Time on trash days = put outside by':'Tijd op afvaldagen = uiterlijk buiten zetten','passed':'verstreken','in':'over','Settings':'Instellingen','Switch profile':'Profiel wisselen','Admin PIN':'Beheerder-pincode','Admin':'Beheerder','Choose profile':'Kies profiel','Who are you?':'Wie ben jij?','Members can change their own settings. The admin can change everything.':'Leden kunnen hun eigen instellingen wijzigen. De beheerder kan alles wijzigen.','PIN':'pincode','Enter PIN':'Voer pincode in','Wrong PIN':'Onjuiste pincode','Personal PIN (4 to 8 digits)':'Persoonlijke pincode (4 tot 8 cijfers)','Leave empty to keep the current PIN':'Leeg laten om de huidige pincode te behouden','No PIN set':'Geen pincode ingesteld','Remove PIN':'Pincode verwijderen','Now':'Nu','Data & sync':'Gegevens & synchronisatie','Backup':'Back-up','Export data.json':'data.json exporteren','Import data.json':'data.json importeren','Only the admin can import data.':'Alleen de beheerder kan gegevens importeren.','GitHub sync':'GitHub-synchronisatie','Repository (owner/name)':'Repository (eigenaar/naam)','Access token':'Toegangstoken','Branch: main. File: data.json. Use a private repository: data.json contains names and PIN codes. The token stays on this device and is never written to data.json.':'Branch: main. Bestand: data.json. Gebruik een privérepository: data.json bevat namen en pincodes. Het token blijft op dit apparaat en wordt nooit in data.json geschreven.','Connected to':'Verbonden met','Not set up':'Niet ingesteld','Only the admin can change the sync settings.':'Alleen de beheerder kan de synchronisatie-instellingen wijzigen.','Disconnect':'Ontkoppelen','Use the format owner/name.':'Gebruik het formaat eigenaar/naam.','Last synced':'Laatst gesynchroniseerd','Never':'Nooit','Replace current data?':'Huidige gegevens vervangen?','Replace':'Vervangen','This file contains':'Dit bestand bevat','members':'leden','tasks':'taken','trash types':'afvalsoorten','That file is not valid data.json for this app.':'Dit bestand is geen geldige data.json voor deze app.','Import failed':'Importeren mislukt','Data imported.':'Gegevens geïmporteerd.','Data exported.':'Gegevens geëxporteerd.','Check for updates':'Controleren op updates','Upload changes':'Wijzigingen uploaden','Already up to date':'Al up-to-date','Updated':'Bijgewerkt','Reloading…':'Opnieuw laden…','Sync is not set up. Ask the admin to add the repository.':'Synchronisatie is niet ingesteld. Vraag de beheerder om de repository toe te voegen.','Local changes that are not uploaded will be replaced by the repository version. Continue?':'Lokale wijzigingen die niet zijn geüpload worden vervangen door de versie uit de repository. Doorgaan?','The repository has newer changes. Overwrite them with your version?':'De repository heeft nieuwere wijzigingen. Overschrijven met jouw versie?','Overwrite':'Overschrijven','Continue':'Doorgaan','Uploaded':'Geüpload','Your changes are on GitHub.':'Je wijzigingen staan op GitHub.','Token rejected by GitHub.':'Token geweigerd door GitHub.','No permission: the token needs Contents read and write access.':'Geen toestemming: het token heeft lees- en schrijftoegang tot Contents nodig.','Repository, branch main or data.json not found.':'Repository, branch main of data.json niet gevonden.','Could not reach GitHub.':'GitHub is niet bereikbaar.','GitHub error':'GitHub-fout','Install app':'App installeren','Saved':'Opgeslagen','Sync failed':'Synchronisatie mislukt','Add a token with write access first.':'Voeg eerst een token met schrijfrechten toe.','Guest':'Gast','Guest (preview only)':'Gast (alleen bekijken)','Guest preview: view only':'Gastweergave: alleen bekijken','Guest preview: you can look around but not change anything. Choose a profile to make changes.':'Gastweergave: je kunt rondkijken maar niets wijzigen. Kies een profiel om wijzigingen te maken.','Red line = now.':'Rode lijn = nu.','Notifications':'Meldingen','Reminders on':'Herinneringen aan','Upcoming tasks':'Aankomende taken','Remind me before a task starts':'Herinner mij voordat een taak begint','At start':'Bij aanvang','before':'ervoor','Trash reminders':'Afvalherinneringen','Remind me the evening before':'Herinner mij de avond ervoor','Evening reminder time':'Tijd van de avondherinnering','Remind me before the put-outside deadline':'Herinner mij voor de deadline om het buiten te zetten','Off':'Uit','Phone or browser notifications':'Telefoon- of browsermeldingen','Also show browser notifications':'Toon ook browsermeldingen','Send test':'Testmelding sturen','Test reminder':'Testherinnering','This is how reminders will look.':'Zo zien herinneringen eruit.','Reminders only appear while this page is open, in your browser or added to your home screen. A closed app cannot send them without a server.':'Herinneringen verschijnen alleen terwijl deze pagina open is, in je browser of toegevoegd aan je beginscherm. Een gesloten app kan ze niet versturen zonder server.','Upcoming task':'Aankomende taak','Starts at':'Begint om','Trash tomorrow':'Morgen afval','Take out the trash':'Zet het afval buiten','must be outside by':'moet buiten staan voor','Dismiss':'Sluiten','Browser permission':'Browsertoestemming','allowed':'toegestaan','blocked':'geblokkeerd','not asked yet':'nog niet gevraagd','Not supported here':'Hier niet ondersteund','A PIN stops other people on this device from switching to the admin profile. It is a simple lock, not secure protection.':'Een pincode houdt anderen op dit apparaat tegen om naar het beheerdersprofiel te wisselen. Het is een eenvoudig slot, geen echte beveiliging.','New PIN (4 to 8 digits, empty = no PIN)':'Nieuwe pincode (4 tot 8 cijfers, leeg = geen pincode)','Use 4 to 8 digits.':'Gebruik 4 tot 8 cijfers.','View only':'Alleen bekijken','Only the admin or the person it belongs to can change this.':'Alleen de beheerder of de persoon zelf kan dit wijzigen.','Select':'Kiezen','Duration (minutes, optional)':'Duur (minuten, optioneel)','h':'u','min':'min','Striped = time off (V = vacation, \u00d7 = day off)':'Gestreept = verlof (V = vakantie, \u00d7 = vrije dag)'};
+var SH=['Morning shift','Afternoon shift','Night shift','Daytime shift'],TYPES=['Housekeeping','Goal','Other'],RL={none:'Does not repeat',daily:'Daily',weekly:'Weekly'};
+var COLORS=['#2b8c6e','#c4492f','#7a4fc0','#d49a1a','#2b7fb5','#c4478f'];
+var LANG=(function(){try{var l=localStorage.getItem('hh-lang');if(l==='nl'||l==='en')return l}catch(e){}return(navigator.language||'en').toLowerCase().indexOf('nl')===0?'nl':'en'})();
+function L(s){return LANG==='nl'&&NL[s]||s}
+function loc(){return LANG==='nl'?'nl-NL':'en-US'}
+function canon(v){for(var i=0;i<SH.length;i++)if(v===SH[i]||v===NL[SH[i]])return SH[i];return v}
+var S=load(),today=new Date(),view=new Date(today.getFullYear(),today.getMonth(),1),sel=key(today);
+function $(s){return document.querySelector(s)}
+function key(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function parse(k){var a=k.split('-').map(Number);return new Date(a[0],a[1]-1,a[2])}
+function uid(){return Math.random().toString(36).slice(2,9)}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function load(){try{var r=localStorage.getItem('household-cal');if(r){var o=JSON.parse(r);if(o&&o.members&&o.tasks){o.trash=o.trash||[];o.pin=o.pin||'';o.members.forEach(function(m){if(!m.len){var a=[];for(var i=0;i<7;i++)a.push(m.hours[i]||null);m.hours=a;m.len=7;var d=new Date();d.setDate(d.getDate()-d.getDay());m.anchor=key(d)}});return o}}}catch(e){}return{members:[],tasks:[],trash:[],pin:''}}
+function save(){try{localStorage.setItem('household-cal',JSON.stringify(S))}catch(e){}updSync()}
+function mem(id){return S.members.find(function(m){return m.id===id})}
+function occurs(t,k){if(k<t.date)return false;if(t.repeat==='daily')return true;if(t.repeat==='weekly')return parse(k).getDay()===parse(t.date).getDay();return k===t.date}
+function on(k){return S.tasks.filter(function(t){return occurs(t,k)}).sort(function(a,b){return(a.time||'')<(b.time||'')?-1:1})}
+function hrs(m,k){if(m.unemployed||offOf(m,k))return null;var n=m.len,i=Math.round((parse(k)-parse(m.anchor))/864e5);return m.hours[((i%n)+n)%n]}
+function monday(){var d=new Date();d.setDate(d.getDate()-((d.getDay()+6)%7));return d}
+function fmt(s){var a=s.split(':'),h=(+a[0])%24;if(LANG==='nl')return(h<10?'0':'')+h+':'+a[1];return(h%12||12)+(a[1]==='00'?'':':'+a[1])+(h<12?'a':'p')}
+function pct(s){var a=s.split(':'),v=(+a[0]+a[1]/60)/24*100;return Math.max(0,Math.min(100,v))}
+function prevKey(k){var d=parse(k);return key(new Date(d.getFullYear(),d.getMonth(),d.getDate()-1))}
+function carry(m,k){var p=hrs(m,prevKey(k));return p&&p[1]<=p[0]&&p[1]>'00:00'?p[1]:null}
+function segs(m,k){var w=hrs(m,k),r=[],c=carry(m,k);if(c)r.push(['00:00',c]);if(w)r.push([w[0],w[1]<=w[0]?'24:00':w[1]]);return r}
+function working(m,k,s,e){return segs(m,k).some(function(x){return e?(s<x[1]&&e>x[0]):(s>=x[0]&&s<x[1])})}
+function endStr(t){if(!t.time||!t.dur)return'';var a=t.time.split(':'),m=Math.min(1440,(+a[0])*60+(+a[1])+t.dur);return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')}
+function durS(n){return n>=60?Math.floor(n/60)+' '+L('h')+(n%60?' '+n%60+' '+L('min'):''):n+' '+L('min')}
+function lbl(m,k){var w=hrs(m,k),c=carry(m,k),f=offOf(m,k),o=[];if(c)o.push(L('until')+' '+fmt(c));if(w)o.push((w[2]?L(w[2])+' ':'')+fmt(w[0])+'\u2013'+fmt(w[1])+(w[1]<=w[0]&&w[1]!=='00:00'?' (+1)':''));if(f)o.push(L(f.type));return o.length?o.join(', '+L('then')+' '):L(m.unemployed?'unemployed':'off')}
+function offOf(m,k){return(m.off||[]).find(function(o){return k>=o.from&&k<=o.to})}
+function dl(k){return parse(k).toLocaleDateString(loc(),{day:'numeric',month:'short',year:'numeric'})}
+function color(id){var m=mem(id);return m?m.color:'#8a9a9e'}
+var TC=['#f08a24','#1f7a45','#8a8f8c','#2b7fb5','#7a4fc0','#c4478f'];
+function trashOn(k){return S.trash.filter(function(x){if((x.skip||[]).indexOf(k)>-1)return false;if((x.extra||[]).indexOf(k)>-1)return true;if(!x.weeks)return false;return Math.round((parse(k)-parse(x.start))/864e5)%(7*x.weeks)===0})}
+function until(s){var n=new Date(),a=s.split(':'),m=(+a[0])*60+(+a[1])-(n.getHours()*60+n.getMinutes());return m<0?L('passed'):L('in')+' '+(m>=60?Math.floor(m/60)+' h ':'')+(m%60)+' min'}
+function trTime(tr){var a=tr.filter(function(z){return z.time}).map(function(z){return z.time}).sort();return a.length?fmt(a[0]):''}
+function ink(hex){var n=parseInt(hex.slice(1),16);return(0.299*(n>>16)+0.587*(n>>8&255)+0.114*(n&255))>150?'#111':'#fff'}
+function tbg(ts){if(ts.length===1)return ts[0].color;var p=100/ts.length;return'linear-gradient(135deg,'+ts.map(function(x,i){return x.color+' '+i*p+'% '+(i+1)*p+'%'}).join(',')+')'}
+
+function statics(){
+ document.documentElement.lang=LANG;document.title=L('Household calendar');
+ $('#h1').textContent=L('Household calendar');$('#mn').textContent=L('Settings')+' \u25be';$('#td').textContent=L('Today');
+ $('#pv').setAttribute('aria-label',L('Previous month'));$('#nx').setAttribute('aria-label',L('Next month'));buildMenu();$('#upd').setAttribute('aria-label',L('Check for updates'));$('#upd').title=L('Check for updates');$('#up').setAttribute('aria-label',L('Upload changes'));$('#up').title=L('Upload changes');
+ $('#lgd').innerHTML='<span><i style="width:14px;height:10px;border-radius:3px;background:var(--mute)"></i>'+L('Work day (one row per person)')+'</span><span><i style="width:7px;height:7px;border-radius:50%;background:var(--mute)"></i>'+L('Task')+'</span><span>'+L('Letter = shift (M, A, N, D)')+'</span><span><i style="width:14px;height:10px;border-radius:3px;background:repeating-linear-gradient(45deg,var(--mute) 0 3px,transparent 3px 6px)"></i>'+L('Striped = time off (V = vacation, \u00d7 = day off)')+'</span>';
+}
+function render(){meBtn();updSync();
+ $('#mt').textContent=view.toLocaleDateString(loc(),{month:'long',year:'numeric'});
+ var h=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(function(d){return'<div class="dow">'+L(d)+'</div>'}).join('');
+ var y=view.getFullYear(),mo=view.getMonth(),off=(view.getDay()+6)%7,n=new Date(y,mo+1,0).getDate();
+ for(var i=0;i<off;i++)h+='<div class="c o"></div>';
+ for(var d=1;d<=n;d++){var k=key(new Date(y,mo,d)),ts=on(k).slice(0,4),tr=trashOn(k);
+  h+='<div class="c'+(k===key(today)?' t':'')+(k===sel?' s':'')+(tr.length?' tr':'')+'" data-k="'+k+'"'+(tr.length?' style="background:'+tbg(tr)+';color:'+ink(tr[0].color)+'" title="'+esc(tr.map(function(z){return z.name}).join(', '))+'"':'')+' role="button" tabindex="0"><b>'+d+'</b><small class="tt">'+(tr.length?trTime(tr):'')+'</small><div class="dots">'+ts.map(function(t){return'<i style="background:'+color(t.who)+'"></i>'}).join('')+'</div><div class="wk">'+
+  S.members.filter(function(m){return !m.unemployed}).map(function(m){var w=hrs(m,k),f=offOf(m,k);return'<i'+(f||w?'':' class="off"')+' title="'+esc(m.name+' '+lbl(m,k))+'" style="background:'+(f?'repeating-linear-gradient(45deg,'+m.color+' 0 3px,rgba(128,128,128,.3) 3px 6px)':m.color)+'">'+(f?(f.type==='Vacation'?esc(L('Vacation').charAt(0)):'\u00d7'):w&&w[2]?esc(L(w[2]).charAt(0).toUpperCase()):'')+'</i>'}).join('')+'</div></div>'}
+ $('#g').innerHTML=h;
+ $('#tlg').innerHTML=S.trash.map(function(z){return'<span><i style="width:12px;height:12px;border-radius:4px;background:'+z.color+'"></i>'+esc(z.name)+'</span>'}).join('')+'<span>'+L('Time on trash days = put outside by')+'</span><span>'+L('Hold a date to add time off')+'</span>';
+ panel();
+}
+function panel(){
+ var k=sel,d=parse(k),ts=on(k);
+ var h='<div class="ph"><h2>'+d.toLocaleDateString(loc(),{weekday:'long',month:'long',day:'numeric'})+'</h2><button class="p" id="at">'+L('Add task')+'</button></div>';
+ if(!S.members.length){h+='<div class="empty">'+L('Add the people in your household to set their work hours and assign tasks.')+'<br><br><button class="p" id="am">'+L(isAdmin()?'Add members':'Choose profile')+'</button></div>'}
+ else{
+  var ax=LANG==='nl'?['0:00','6:00','12:00','18:00','24:00']:['12a','6a','12p','6p','12a'];
+  h+='<div class="sub">'+L('Work hours and tasks')+'</div><div class="ax"><span></span><div>'+ax.map(function(a){return'<span>'+a+'</span>'}).join('')+'</div></div>';
+  S.members.forEach(function(m){
+   h+='<div class="rib"><span><i class="dot" style="background:'+m.color+'"></i>'+esc(m.name)+'</span><div class="bar">'+(offOf(m,k)?'<div class="w" style="left:0;width:100%;background:repeating-linear-gradient(45deg,'+m.color+' 0 4px,transparent 4px 8px)"></div>':'')+
+   segs(m,k).map(function(s){return'<div class="w" style="background:'+m.color+';left:'+pct(s[0])+'%;width:'+(pct(s[1])-pct(s[0]))+'%"></div>'}).join('')+
+   ts.filter(function(t){return t.who===m.id&&t.time}).map(function(t){var e=endStr(t);return'<div class="k" title="'+esc(t.title)+'" style="background:'+m.color+';left:'+pct(t.time)+'%'+(e?';margin-left:0;min-width:14px;width:'+(pct(e)-pct(t.time))+'%;border-radius:7px':'')+'"></div>'}).join('')+'</div></div>'});
+  var tdl=trashOn(k).filter(function(z){return z.time});if(tdl.length)h+='<div class="rib"><span>'+L('Trash')+'</span><div class="bar">'+tdl.map(function(z){return'<div class="dl" title="'+esc(z.name)+'" style="background:'+z.color+';left:'+pct(z.time)+'%"></div>'}).join('')+'</div></div>';
+  h+='<div class="meta" style="margin-top:4px">'+L('Shaded = working. Dots = timed tasks.')+(k===key(new Date())?' '+L('Red line = now.'):'')+' '+S.members.map(function(m){return esc(m.name)+' '+esc(lbl(m,k))}).join('; ')+'.</div>';
+ }
+ var tr=trashOn(k);if(tr.length)h+='<div class="sub">'+L('Trash day')+'</div>'+tr.map(function(z){return'<div class="meta" style="margin:4px 0"><span style="background:'+z.color+';color:'+ink(z.color)+';padding:3px 10px;border-radius:999px;font-weight:500">'+esc(z.name)+'</span>'+(z.time?'<span><b>'+L('Put outside by')+' '+fmt(z.time)+'</b>'+(k===key(new Date())?' ('+until(z.time)+')':'')+'</span>':'')+'</div>'}).join('');
+ h+='<div class="sub">'+L('Tasks')+'</div>';
+ if(!ts.length)h+='<div class="empty">'+L('Nothing planned. Add a chore or goal for this day.')+'</div>';
+ ts.forEach(function(t){var m=mem(t.who),dn=t.done&&t.done[k],w=m&&t.time&&working(m,k,t.time,endStr(t));
+  h+='<div class="task'+(dn?' dn':'')+'"><input type="checkbox" data-d="'+t.id+'"'+(dn?' checked':'')+(isAdmin()||(mem(ME)&&(!t.who||t.who===ME))?'':' disabled')+' aria-label="'+L('Mark done')+'"><div class="b" data-e="'+t.id+'"><div class="ti">'+esc(t.title)+'</div><div class="meta">'+
+  (t.time?'<span>'+fmt(t.time)+(t.dur?'\u2013'+fmt(endStr(t)):'')+'</span>':'')+(t.dur?'<span>'+durS(t.dur)+'</span>':'')+'<span><i class="dot" style="background:'+color(t.who)+'"></i>'+(m?esc(m.name):L('Anyone'))+'</span><span>'+L(t.type)+'</span>'+(t.repeat!=='none'?'<span>'+L('Repeats '+t.repeat)+'</span>':'')+(w?'<span class="warn">'+L('During work hours')+'</span>':'')+'</div></div></div>'});
+ $('#p').innerHTML=h;nowMark();
+}
+function nowMark(){
+ document.querySelectorAll('.bar .now').forEach(function(n){n.remove()});
+ if(sel!==key(new Date()))return;
+ var d=new Date(),s=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+ document.querySelectorAll('#p .bar').forEach(function(b){var n=document.createElement('div');n.className='now';n.style.left=pct(s)+'%';n.title=L('Now')+' '+fmt(s);b.appendChild(n)});
+}
+setInterval(nowMark,30000);
+function openM(h){$('#sh').innerHTML=h;$('#m').classList.add('on')}
+function closeM(){$('#m').classList.remove('on')}
+function opts(arr,v,f){return arr.map(function(a){return'<option value="'+a+'"'+(a===v?' selected':'')+'>'+L(f?f(a):a)+'</option>'}).join('')}
+
+function membersM(){
+ var h='<h2>'+L('Household members')+'</h2>';
+ if(!S.members.length)h+='<div class="empty">'+L('No members yet.')+'</div>';
+ S.members.forEach(function(m){h+='<div class="mem"><i class="dot" style="background:'+m.color+'"></i><span>'+esc(m.name)+'</span>'+(canM(m.id)?'<button data-em="'+m.id+'">'+L('Edit hours')+'</button><button data-eo="'+m.id+'">'+L('Time off')+'</button>':'')+'</div>'});
+ h+='<div class="acts">'+(isAdmin()?'<button class="p" id="nm">'+L('Add member')+'</button>':'')+'<span class="sp"></span><button id="cl">'+L('Done')+'</button></div>';
+ openM(h);
+}
+function memberM(id){if(id?!canM(id):!isAdmin()){denied();return}
+ var w9=['09:00','17:00'],m=id?mem(id):{id:uid(),name:'',color:COLORS[S.members.length%COLORS.length],len:7,anchor:key(monday()),hours:[w9,w9,w9,w9,w9,null,null]};
+ var len=m.len,dr=m.hours.slice();
+ var h='<h2>'+L(id?'Edit member':'New member')+'</h2><label>'+L('Name')+'</label><div class="row"><input type="text" id="mnm" value="'+esc(m.name)+'" style="flex:1"><input type="color" id="mc" value="'+m.color+'" style="flex:0 0 44px"></div>'+
+ '<label style="display:flex;gap:8px;align-items:center;color:var(--ink)"><input type="checkbox" id="mu"'+(m.unemployed?' checked':'')+' style="width:20px;height:20px;accent-color:var(--acc)">'+L('Unemployed (no work schedule)')+'</label><div id="sch"><div class="row"><div><label>'+L('Schedule repeats every (days)')+'</label><input type="number" id="ml" min="1" max="60" value="'+len+'"></div><div><label>'+L('Day 1 falls on')+'</label><input type="date" id="ma" value="'+m.anchor+'"></div></div>'+
+ '<label>'+L('Hours for each day of the cycle (uncheck days off). For a night shift, set the end earlier than the start, like 22:00 to 06:00.')+'</label><datalist id="shifts">'+SH.map(function(s){return'<option value="'+L(s)+'">'}).join('')+'</datalist><div id="rw"></div></div>';
+ h+='<label>'+L('Personal PIN (4 to 8 digits)')+'</label><input type="password" inputmode="numeric" id="mpn" autocomplete="off" placeholder="'+(m.pin?L('Leave empty to keep the current PIN'):L('No PIN set'))+'">'+(m.pin?'<label style="display:flex;gap:8px;align-items:center;color:var(--ink)"><input type="checkbox" id="mpr" style="width:20px;height:20px;accent-color:var(--acc)">'+L('Remove PIN')+'</label>':'')+'<div class="meta warn" id="mpe" style="margin-top:4px"></div>';
+ h+='<div class="acts">'+(id&&isAdmin()?'<button class="d" id="dm">'+L('Remove')+'</button>':'')+'<span class="sp"></span><button id="bk">'+L('Cancel')+'</button><button class="p" id="sm">'+L('Save member')+'</button></div>';
+ openM(h);
+ function read(){for(var i=0;i<len;i++)dr[i]=$('#c'+i).checked?[$('#s'+i).value||'09:00',$('#e'+i).value||'17:00',canon($('#l'+i).value.trim())]:null}
+ function draw(){var a=parse($('#ma').value||m.anchor),r='';
+  for(var i=0;i<len;i++){var d=new Date(a.getFullYear(),a.getMonth(),a.getDate()+i),w=dr[i];
+   r+='<div class="hr"><span>'+L('Day')+' '+(i+1)+'<small>'+d.toLocaleDateString(loc(),{weekday:'short',month:'short',day:'numeric'})+'</small></span><input type="checkbox" id="c'+i+'"'+(w?' checked':'')+' aria-label="'+L('Works day')+' '+(i+1)+'"><input type="time" id="s'+i+'" value="'+(w?w[0]:'09:00')+'"><input type="time" id="e'+i+'" value="'+(w?w[1]:'17:00')+'"><input type="text" id="l'+i+'" list="shifts" placeholder="'+L('Shift label (optional)')+'" value="'+esc(w&&w[2]?L(w[2]):'')+'" style="grid-column:2/-1"></div>'}
+  $('#rw').innerHTML=r}
+ draw();
+ $('#ml').onchange=function(){var n=Math.max(1,Math.min(60,parseInt($('#ml').value)||7));read();while(dr.length<n)dr.push(null);len=n;$('#ml').value=n;draw()};
+ $('#ma').onchange=function(){read();draw()};
+ function tg(){$('#sch').style.display=$('#mu').checked?'none':''}
+ $('#mu').onchange=tg;tg();
+ $('#bk').onclick=membersM;
+ $('#sm').onclick=function(){var nm=$('#mnm').value.trim();if(!nm){$('#mnm').focus();return}
+  var pv=$('#mpn').value.trim();if(pv&&!/^\d{4,8}$/.test(pv)){$('#mpe').textContent=L('Use 4 to 8 digits.');return}if(pv)m.pin=hp(pv);else if($('#mpr')&&$('#mpr').checked)m.pin='';
+  read();m.unemployed=$('#mu').checked;m.name=nm;m.color=$('#mc').value;m.len=len;m.anchor=$('#ma').value||m.anchor;m.hours=dr.slice(0,len);
+  if(!id)S.members.push(m);save();render();membersM()};
+ if(id&&isAdmin())$('#dm').onclick=function(){S.members=S.members.filter(function(x){return x.id!==id});S.tasks.forEach(function(t){if(t.who===id)t.who=''});save();render();membersM()};
+}
+function taskM(id){
+ var t=id?S.tasks.find(function(x){return x.id===id}):{id:uid(),title:'',date:sel,time:'',who:isAdmin()?(S.members.length?S.members[0].id:''):ME,type:'Housekeeping',repeat:'none',done:{}};
+ if(id&&!(isAdmin()||t.who===ME)||!isAdmin()&&!mem(ME)){denied();return}
+ var h='<h2>'+L(id?'Edit task':'New task')+'</h2><label>'+L('Task')+'</label><input type="text" id="tt" value="'+esc(t.title)+'" placeholder="'+L('Vacuum the living room')+'">'+
+ '<div class="row"><div><label>'+L('Date')+'</label><input type="date" id="td2" value="'+t.date+'"></div><div><label>'+L('Time (optional)')+'</label><input type="time" id="tm" value="'+t.time+'"></div></div>'+'<label>'+L('Duration (minutes, optional)')+'</label><input type="number" id="du" min="0" max="1440" step="5" value="'+(t.dur||'')+'" placeholder="30">'+
+ '<label>'+L('Assigned to')+'</label><select id="tw">'+(isAdmin()?'<option value="">'+L('Anyone')+'</option>':'')+S.members.filter(function(m){return isAdmin()||m.id===ME}).map(function(m){return'<option value="'+m.id+'"'+(m.id===t.who?' selected':'')+'>'+esc(m.name)+'</option>'}).join('')+'</select>'+
+ '<div class="row"><div><label>'+L('Type')+'</label><select id="ty">'+opts(TYPES,t.type)+'</select></div><div><label>'+L('Repeat')+'</label><select id="rp">'+opts(['none','daily','weekly'],t.repeat,function(a){return RL[a]})+'</select></div></div>'+
+ '<div class="meta warn" id="wn" style="margin-top:8px"></div>'+
+ '<div class="acts">'+(id?'<button class="d" id="dt">'+L('Delete')+'</button>':'')+'<span class="sp"></span><button id="bk">'+L('Cancel')+'</button><button class="p" id="st">'+L('Save task')+'</button></div>';
+ openM(h);
+ function chk(){var m=mem($('#tw').value),k=$('#td2').value,tm=$('#tm').value;
+  $('#wn').textContent=(m&&k&&tm&&working(m,k,tm,endStr({time:tm,dur:+$('#du').value||0})))?m.name+' '+L('is working then')+' ('+lbl(m,k)+'). '+L('Pick another time or person.'):''}
+ ['#tw','#td2','#tm','#du'].forEach(function(s){$(s).onchange=chk});chk();
+ $('#bk').onclick=closeM;
+ $('#st').onclick=function(){var ti=$('#tt').value.trim();if(!ti){$('#tt').focus();return}
+  t.title=ti;t.date=$('#td2').value||sel;t.time=$('#tm').value;t.dur=Math.max(0,parseInt($('#du').value)||0);t.who=isAdmin()?$('#tw').value:ME;t.type=$('#ty').value;t.repeat=$('#rp').value;
+  if(!id)S.tasks.push(t);sel=t.date;var d=parse(sel);view=new Date(d.getFullYear(),d.getMonth(),1);save();closeM();render()};
+ if(id)$('#dt').onclick=function(){S.tasks=S.tasks.filter(function(x){return x.id!==id});save();closeM();render()};
+}
+
+function timeOffM(id){if(!canM(id)){denied();return}
+ var m=mem(id);m.off=m.off||[];
+ var h='<h2>'+esc(m.name)+': '+L('Time off')+'</h2>';
+ if(!m.off.length)h+='<div class="empty">'+L('No time off planned.')+'</div>';
+ m.off.slice().sort(function(a,b){return a.from<b.from?-1:1}).forEach(function(o){h+='<div class="mem"><span>'+L(o.type)+'<div class="meta">'+dl(o.from)+(o.to!==o.from?' \u2013 '+dl(o.to):'')+'</div></span><button class="d" data-do="'+o.id+'">'+L('Remove')+'</button></div>'});
+ h+='<label>'+L('Type')+'</label><select id="ot">'+opts(['Vacation','Day off'],'Vacation')+'</select><div class="row"><div><label>'+L('From')+'</label><input type="date" id="of" value="'+sel+'"></div><div><label>'+L('To (optional)')+'</label><input type="date" id="oe"></div></div><div class="acts"><button class="p" id="oa">'+L('Add time off')+'</button><span class="sp"></span><button id="bk">'+L('Back')+'</button></div>';
+ openM(h);
+ document.querySelectorAll('[data-do]').forEach(function(b){b.onclick=function(){m.off=m.off.filter(function(o){return o.id!==b.dataset.do});save();render();timeOffM(id)}});
+ $('#bk').onclick=membersM;
+ $('#oa').onclick=function(){var f=$('#of').value,e=$('#oe').value;if(!f){$('#of').focus();return}m.off.push({id:uid(),type:$('#ot').value,from:f,to:e&&e>=f?e:f});save();render();timeOffM(id)};
+}
+var ME=(function(){var k='guest';try{k=sessionStorage.getItem('hh-keep')||'guest';sessionStorage.removeItem('hh-keep')}catch(e){}return k})();
+function isAdmin(){return ME==='admin'}
+function canM(id){return isAdmin()||ME===id}
+function setMe(v){ME=v;statics();render()}
+function hp(p){var h=5381;for(var i=0;i<p.length;i++)h=((h<<5)+h+p.charCodeAt(i))|0;return String(h)}
+function denied(){var g=ME==='guest';openM('<h2>'+L('View only')+'</h2><div class="empty">'+L(g?'Guest preview: you can look around but not change anything. Choose a profile to make changes.':'Only the admin or the person it belongs to can change this.')+'</div><div class="acts">'+(g?'<button class="p" id="gp">'+L('Choose profile')+'</button>':'')+'<span class="sp"></span><button id="cl">'+L('Done')+'</button></div>')}
+function meBtn(){var m=mem(ME),a=isAdmin();$('#pf').innerHTML='<i class="dot" style="background:'+(a?'var(--acc)':m?m.color:'var(--mute)')+'"></i>'+esc(a?L('Admin'):m?m.name:ME==='guest'?L('Guest'):L('Choose profile'));$('#gb').textContent=ME==='guest'?L('Guest preview: view only'):''}
+function profileM(){
+ var h='<h2>'+L('Who are you?')+'</h2><div class="empty">'+L('Members can change their own settings. The admin can change everything.')+'</div>';
+ h+='<div class="mem"><i class="dot" style="background:var(--mute)"></i><span>'+L('Guest (preview only)')+'</span><button data-pf="guest">'+(ME==='guest'?'\u2713 ':'')+L('Select')+'</button></div>';
+ h+='<div class="mem"><i class="dot" style="background:var(--acc)"></i><span>'+L('Admin')+(S.pin?' ('+L('PIN')+')':'')+'</span><button data-pf="admin">'+(ME==='admin'?'\u2713 ':'')+L('Select')+'</button></div>';
+ S.members.forEach(function(m){h+='<div class="mem"><i class="dot" style="background:'+m.color+'"></i><span>'+esc(m.name)+(m.pin?' ('+L('PIN')+')':'')+'</span><button data-pf="'+m.id+'">'+(ME===m.id?'\u2713 ':'')+L('Select')+'</button></div>'});
+ h+='<div class="acts"><span class="sp"></span><button id="cl">'+L('Done')+'</button></div>';openM(h);
+}
+function pickProfile(v){var need=v==='admin'?(S.pin&&!isAdmin()):(!isAdmin()&&ME!==v&&mem(v)&&mem(v).pin);if(need){pinPrompt(v);return}setMe(v);closeM()}
+function pinPrompt(tg,msg){var pinHash=tg==='admin'?S.pin:(mem(tg)||{}).pin;
+ openM('<h2>'+(tg==='admin'?L('Admin PIN'):L('PIN'))+'</h2><label>'+L('Enter PIN')+'</label><input type="password" inputmode="numeric" id="pp" autocomplete="off">'+(msg?'<div class="meta warn" style="margin-top:8px">'+msg+'</div>':'')+'<div class="acts"><span class="sp"></span><button id="bk">'+L('Cancel')+'</button><button class="p" id="po">OK</button></div>');
+ $('#bk').onclick=profileM;$('#po').onclick=function(){if(hp($('#pp').value)===pinHash){setMe(tg);closeM()}else pinPrompt(tg,L('Wrong PIN'))};$('#pp').focus();
+}
+function pinM(){
+ if(!isAdmin()){denied();return}
+ openM('<h2>'+L('Admin PIN')+'</h2><div class="empty">'+L('A PIN stops other people on this device from switching to the admin profile. It is a simple lock, not secure protection.')+'</div><label>'+L('New PIN (4 to 8 digits, empty = no PIN)')+'</label><input type="password" inputmode="numeric" id="pn" autocomplete="off"><div class="meta warn" id="pe" style="margin-top:8px"></div><div class="acts"><span class="sp"></span><button id="bk">'+L('Cancel')+'</button><button class="p" id="ps">'+L('Save')+'</button></div>');
+ $('#bk').onclick=closeM;$('#ps').onclick=function(){var v=$('#pn').value.trim();if(v&&!/^\d{4,8}$/.test(v)){$('#pe').textContent=L('Use 4 to 8 digits.');return}S.pin=v?hp(v):'';save();closeM()};
+}
+function trashM(){if(!isAdmin()){denied();return}
+ var h='<h2>'+L('Trash days')+'</h2>';
+ if(!S.trash.length)h+='<div class="empty">'+L('Add the trash types your municipality collects. Each type gets its own color on the calendar.')+'</div>';
+ S.trash.forEach(function(x){h+='<div class="mem"><i class="dot" style="background:'+x.color+'"></i><span>'+esc(x.name)+'<div class="meta">'+(x.weeks?(x.weeks===1?L('Every week'):L('Every')+' '+x.weeks+' '+L('weeks')):L('Only extra dates'))+(x.time?' \u00b7 '+L('Put outside by')+' '+fmt(x.time):'')+'</div></span><button data-et="'+x.id+'">'+L('Edit')+'</button></div>'});
+ h+='<div class="acts"><button class="p" id="nt">'+L('Add trash type')+'</button>'+(S.trash.length?'':'<button id="ex">'+L('Use example schedule')+'</button>')+'<span class="sp"></span><button id="cl">'+L('Done')+'</button></div>';
+ openM(h);
+}
+function lst(box,arr,inp,add){
+ function dr(){arr.sort();$(box).innerHTML=arr.map(function(d,i){return'<button data-i="'+i+'" style="padding:4px 8px">'+d+' \u00d7</button>'}).join('')}
+ dr();
+ $(box).onclick=function(e){var i=e.target.dataset.i;if(i!==undefined){arr.splice(+i,1);dr()}};
+ $(add).onclick=function(){var v=$(inp).value;if(v&&arr.indexOf(v)<0){arr.push(v);dr()}};
+}
+function trashEditM(id){if(!isAdmin()){denied();return}
+ var x=id?S.trash.find(function(y){return y.id===id}):{id:uid(),name:'',color:TC[S.trash.length%TC.length],start:sel,weeks:2,extra:[],skip:[]};
+ var ex=(x.extra||[]).slice(),sk=(x.skip||[]).slice();
+ openM('<h2>'+L(id?'Edit trash type':'New trash type')+'</h2><label>'+L('Name')+'</label><div class="row"><input type="text" id="tn" value="'+esc(x.name)+'" style="flex:1"><input type="color" id="tc" value="'+x.color+'" style="flex:0 0 44px"></div><div class="row"><div><label>'+L('A known pickup date')+'</label><input type="date" id="ts" value="'+x.start+'"></div><div><label>'+L('Repeat every (weeks, 0 = only extra dates)')+'</label><input type="number" id="tw2" min="0" max="12" value="'+x.weeks+'"></div></div>'+'<label>'+L('Put outside by (pickup time)')+'</label><input type="time" id="tt" value="'+(x.time||'')+'">'+
+ '<label>'+L('Extra pickup dates')+'</label><div class="meta" id="xl"></div><div class="row"><input type="date" id="xd"><button id="xa">'+L('Add')+'</button></div>'+
+ '<label>'+L('Skipped dates (holidays)')+'</label><div class="meta" id="kl"></div><div class="row"><input type="date" id="kd"><button id="ka">'+L('Add')+'</button></div>'+
+ '<div class="acts">'+(id?'<button class="d" id="dx">'+L('Remove')+'</button>':'')+'<span class="sp"></span><button id="bk">'+L('Cancel')+'</button><button class="p" id="sx">'+L('Save')+'</button></div>');
+ lst('#xl',ex,'#xd','#xa');lst('#kl',sk,'#kd','#ka');
+ $('#bk').onclick=trashM;
+ $('#sx').onclick=function(){var n=$('#tn').value.trim();if(!n){$('#tn').focus();return}x.name=n;x.color=$('#tc').value;x.start=$('#ts').value||x.start;x.weeks=Math.max(0,Math.min(12,parseInt($('#tw2').value)||0));x.time=$('#tt').value;x.extra=ex;x.skip=sk;if(!id)S.trash.push(x);save();render();trashM()};
+ if(id)$('#dx').onclick=function(){S.trash=S.trash.filter(function(y){return y.id!==id});save();render();trashM()};
+}
+function exampleTrash(){
+ S.trash=[['Pbd','#f08a24','2026-09-29',2],['Gft+e','#1f7a45','2026-10-06',2],['Restafval','#8a8f8c','2026-10-01',4]].map(function(a){return{id:uid(),name:a[0],color:a[1],start:a[2],weeks:a[3],extra:[],skip:[]}});
+ save();render();trashM();
+}
+document.addEventListener('click',function(e){
+ var x=e.target,c=x.closest('.c[data-k]');if(!x.closest('.mw')&&!$('#dd').hidden)menu(false);
+ if(c){if(lp){lp=false;return}sel=c.dataset.k;render();return}
+ if(x.closest('#pf')){profileM();return}
+ if(x.dataset.pf){pickProfile(x.dataset.pf);return}
+ if(x.id==='mn'){menu($('#dd').hidden);return}
+ if(x.dataset.mi){menu(false);var mi=x.dataset.mi;if(mi==='members')membersM();else if(mi==='trash')trashM();else if(mi==='profile')profileM();else if(mi==='pin')pinM();else if(mi==='notif')notifM();else if(mi==='data')dataM();else if(mi==='install')installApp();return}
+ if(x.dataset.lang){LANG=x.dataset.lang;try{localStorage.setItem('hh-lang',LANG)}catch(e){}menu(false);statics();render();return}
+ if(x.id==='at'){taskM();return}
+ if(x.id==='am'||x.id==='bm'){if(isAdmin())membersM();else profileM();return}
+ if(x.id==='gp'){profileM();return}
+ if(x.id==='nm'){memberM();return}
+ if(x.id==='bt'){trashM();return}
+ if(x.id==='nt'){trashEditM();return}
+ if(x.id==='ex'){exampleTrash();return}
+ if(x.dataset.et){trashEditM(x.dataset.et);return}
+ if(x.id==='cl'){closeM();return}
+ if(x.dataset.em){memberM(x.dataset.em);return}
+ if(x.dataset.eo){timeOffM(x.dataset.eo);return}
+ var e2=x.closest('[data-e]');if(e2){taskM(e2.dataset.e);return}
+ if(x.id==='m'){closeM()}
+});
+document.addEventListener('change',function(e){var id=e.target.dataset&&e.target.dataset.d;if(!id)return;
+ var t=S.tasks.find(function(x){return x.id===id});if(!t.done)t.done={};
+ if(e.target.checked)t.done[sel]=true;else delete t.done[sel];save();panel()});
+document.addEventListener('keydown',function(e){if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('.c[data-k]')){e.preventDefault();e.target.click()}});
+var lpT=null,lp=false,sx=0,sy=0;
+function dayM(k){if(!isAdmin()&&!mem(ME)){denied();return}
+ var h='<h2>'+parse(k).toLocaleDateString(loc(),{weekday:'long',month:'long',day:'numeric'})+'</h2><div class="sub">'+L('Time off')+'</div>';
+ if(!S.members.length){openM(h+'<div class="empty">'+L('Add members first to set time off.')+'</div><div class="acts"><button class="p" id="gm">'+L('Add members')+'</button><span class="sp"></span><button id="cl">'+L('Done')+'</button></div>');$('#gm').onclick=membersM;return}
+ var any=false;
+ S.members.forEach(function(m){var f=offOf(m,k);if(f){any=true;h+='<div class="mem"><i class="dot" style="background:'+m.color+'"></i><span>'+esc(m.name)+'<div class="meta">'+L(f.type)+' \u00b7 '+dl(f.from)+(f.to!==f.from?' \u2013 '+dl(f.to):'')+'</div></span>'+(canM(m.id)?'<button class="d" data-dr="'+m.id+':'+f.id+'">'+L('Remove')+'</button>':'')+'</div>'}});
+ if(!any)h+='<div class="empty">'+L('No time off planned.')+'</div>';
+ h+='<label>'+L('Person')+'</label><select id="dp">'+S.members.filter(function(m){return canM(m.id)}).map(function(m){return'<option value="'+m.id+'">'+esc(m.name)+'</option>'}).join('')+'</select><label>'+L('Type')+'</label><select id="dy">'+opts(['Vacation','Day off'],'Vacation')+'</select><div class="row"><div><label>'+L('From')+'</label><input type="date" id="df" value="'+k+'"></div><div><label>'+L('To (optional)')+'</label><input type="date" id="de"></div></div><div class="acts"><button class="p" id="da">'+L('Add time off')+'</button><span class="sp"></span><button id="cl">'+L('Done')+'</button></div>';
+ openM(h);
+ document.querySelectorAll('[data-dr]').forEach(function(b){b.onclick=function(){var p=b.dataset.dr.split(':'),m=mem(p[0]);m.off=m.off.filter(function(o){return o.id!==p[1]});save();render();dayM(k)}});
+ $('#da').onclick=function(){var m=mem($('#dp').value),f=$('#df').value,e=$('#de').value;if(!f){$('#df').focus();return}m.off=m.off||[];m.off.push({id:uid(),type:$('#dy').value,from:f,to:e&&e>=f?e:f});save();render();dayM(k)};
+}
+$('#g').addEventListener('pointerdown',function(e){var c=e.target.closest('.c[data-k]');if(!c)return;sx=e.clientX;sy=e.clientY;clearTimeout(lpT);lpT=setTimeout(function(){lp=true;setTimeout(function(){lp=false},800);sel=c.dataset.k;render();dayM(sel)},500)});
+['pointerup','pointercancel','pointerleave'].forEach(function(ev){$('#g').addEventListener(ev,function(){clearTimeout(lpT)})});
+$('#g').addEventListener('pointermove',function(e){if(Math.abs(e.clientX-sx)>10||Math.abs(e.clientY-sy)>10)clearTimeout(lpT)});
+$('#g').addEventListener('contextmenu',function(e){e.preventDefault()});
+function buildMenu(){$('#dd').innerHTML='<button data-mi="profile">'+L('Switch profile')+'</button><button data-mi="data">'+L('Data & sync')+'</button>'+(deferredInstall?'<button data-mi="install">'+L('Install app')+'</button>':'')+(ME==='guest'?'':'<button data-mi="members">'+L('Members')+'</button><button data-mi="notif">'+L('Notifications')+'</button>')+(isAdmin()?'<button data-mi="trash">'+L('Trash days')+'</button><button data-mi="pin">'+L('Admin PIN')+'</button>':'')+'<div class="sub" style="margin:8px 10px 2px">'+L('Language')+'</div><button data-lang="en">'+(LANG==='en'?'\u2713 ':'')+'English</button><button data-lang="nl">'+(LANG==='nl'?'\u2713 ':'')+'Nederlands</button>'}
+function menu(o){$('#dd').hidden=!o;$('#mn').setAttribute('aria-expanded',o)}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')menu(false)});
+$('#pv').onclick=function(){view=new Date(view.getFullYear(),view.getMonth()-1,1);render()};
+$('#nx').onclick=function(){view=new Date(view.getFullYear(),view.getMonth()+1,1);render()};
+$('#td').onclick=function(){today=new Date();sel=key(today);view=new Date(today.getFullYear(),today.getMonth(),1);render()};
+var P=(function(){var d={on:false,os:false,taskLead:15,eve:true,eveTime:'19:00',trashLead:30};try{var r=JSON.parse(localStorage.getItem('hh-notif'));if(r)for(var k in r)d[k]=r[k]}catch(e){}return d})();
+function saveP(){try{localStorage.setItem('hh-notif',JSON.stringify(P))}catch(e){}}
+function toast(title,body){
+ var el=document.createElement('div');el.className='toast';
+ el.innerHTML='<div><b>'+esc(title)+'</b><span>'+esc(body)+'</span></div><button>'+L('Dismiss')+'</button>';
+ el.querySelector('button').onclick=function(){el.remove()};
+ $('#toasts').appendChild(el);setTimeout(function(){el.remove()},15000);
+}
+function notify(title,body,tag){
+ toast(title,body);
+ try{if(navigator.vibrate)navigator.vibrate([120,60,120])}catch(e){}
+ try{if(P.os&&window.Notification&&Notification.permission==='granted')new Notification(title,{body:body,tag:tag})}catch(e){}
+}
+function atT(k,s){var d=parse(k),a=s.split(':');d.setHours(+a[0],+a[1],0,0);return d.getTime()}
+function mine(t){return isAdmin()||(!!mem(ME)&&(!t.who||t.who===ME))}
+function checkNotif(){
+ if(!P.on)return;
+ var now=Date.now(),n=new Date(),tk=key(n),tm=key(new Date(n.getFullYear(),n.getMonth(),n.getDate()+1)),evs=[];
+ [tk,tm].forEach(function(k){
+  on(k).forEach(function(t){if(!t.time||(t.done&&t.done[k])||!mine(t))return;var m=mem(t.who);
+   evs.push({id:'t:'+t.id+':'+k+':'+P.taskLead,at:atT(k,t.time)-P.taskLead*6e4,title:L('Upcoming task')+': '+t.title,body:L('Starts at')+' '+fmt(t.time)+(t.dur?' ('+durS(t.dur)+')':'')+(m?' \u00b7 '+m.name:'')})});
+  if(P.trashLead>0)trashOn(k).forEach(function(z){if(z.time)evs.push({id:'d:'+z.id+':'+k+':'+P.trashLead,at:atT(k,z.time)-P.trashLead*6e4,title:L('Take out the trash'),body:z.name+' '+L('must be outside by')+' '+fmt(z.time)})});
+  if(P.eve&&k===tm){var tr=trashOn(k);if(tr.length)evs.push({id:'e:'+k,at:atT(tk,P.eveTime||'19:00'),title:L('Trash tomorrow'),body:tr.map(function(z){return z.name+(z.time?' ('+L('Put outside by')+' '+fmt(z.time)+')':'')}).join(', ')})}
+ });
+ var f={},ch=false;try{f=JSON.parse(localStorage.getItem('hh-fired'))||{}}catch(x){}
+ evs.forEach(function(v){if(f[v.id]||now<v.at||now-v.at>9e5)return;f[v.id]=now;ch=true;notify(v.title,v.body,v.id)});
+ for(var i in f)if(now-f[i]>1728e5){delete f[i];ch=true}
+ if(ch)try{localStorage.setItem('hh-fired',JSON.stringify(f))}catch(x){}
+}
+function notifM(){if(!isAdmin()&&!mem(ME)){denied();return}
+ var lead=[0,5,10,15,30,60],tl=[0,15,30,60],cb='style="width:20px;height:20px;accent-color:var(--acc)"',lb='<label style="display:flex;gap:8px;align-items:center;color:var(--ink)">';
+ function lo(a,v,z){return a.map(function(n){return'<option value="'+n+'"'+(n===v?' selected':'')+'>'+(n===0?L(z):(n===60?'1 '+L('h'):n+' '+L('min'))+' '+L('before'))+'</option>'}).join('')}
+ openM('<h2>'+L('Notifications')+'</h2><div class="meta">'+L('Reminders only appear while this page is open, in your browser or added to your home screen. A closed app cannot send them without a server.')+'</div>'+
+  lb+'<input type="checkbox" id="nfOn"'+(P.on?' checked':'')+' '+cb+'>'+L('Reminders on')+'</label>'+
+  '<div class="sub">'+L('Upcoming tasks')+'</div><label>'+L('Remind me before a task starts')+'</label><select id="nfLead">'+lo(lead,P.taskLead,'At start')+'</select>'+
+  '<div class="sub">'+L('Trash reminders')+'</div>'+lb+'<input type="checkbox" id="nfEve"'+(P.eve?' checked':'')+' '+cb+'>'+L('Remind me the evening before')+'</label><label>'+L('Evening reminder time')+'</label><input type="time" id="nfTime" value="'+P.eveTime+'"><label>'+L('Remind me before the put-outside deadline')+'</label><select id="nfDl">'+lo(tl,P.trashLead,'Off')+'</select>'+
+  '<div class="sub">'+L('Phone or browser notifications')+'</div>'+lb+'<input type="checkbox" id="nfOs"'+(P.os?' checked':'')+' '+cb+'>'+L('Also show browser notifications')+'</label><div class="meta" id="nfSt" style="margin-top:4px"></div>'+
+  '<div class="acts"><button id="nfTest">'+L('Send test')+'</button><span class="sp"></span><button class="p" id="cl">'+L('Done')+'</button></div>');
+ function st(){var p=window.Notification?Notification.permission:'';$('#nfSt').textContent=window.Notification?L('Browser permission')+': '+(p==='granted'?L('allowed'):p==='denied'?L('blocked'):L('not asked yet')):L('Not supported here')}
+ st();
+ $('#nfOn').onchange=function(){P.on=this.checked;saveP();if(P.on)checkNotif()};
+ $('#nfLead').onchange=function(){P.taskLead=+this.value;saveP()};
+ $('#nfEve').onchange=function(){P.eve=this.checked;saveP()};
+ $('#nfTime').onchange=function(){P.eveTime=this.value||'19:00';saveP()};
+ $('#nfDl').onchange=function(){P.trashLead=+this.value;saveP()};
+ $('#nfOs').onchange=function(){P.os=this.checked;saveP();if(P.os&&window.Notification&&Notification.permission==='default'){try{var r=Notification.requestPermission(function(){st()});if(r&&r.then)r.then(st)}catch(x){}}st()};
+ $('#nfTest').onclick=function(){notify(L('Test reminder'),L('This is how reminders will look.'),'test')};
+}
+/* ===== data.json export / import / GitHub sync ===== */
+var GH=(function(){try{return JSON.parse(localStorage.getItem('hh-gh'))||{}}catch(e){return{}}})();
+var SY=(function(){try{return JSON.parse(localStorage.getItem('hh-sync'))||{}}catch(e){return{}}})();
+function saveGH(){try{localStorage.setItem('hh-gh',JSON.stringify(GH))}catch(e){}}
+function saveSY(){try{localStorage.setItem('hh-sync',JSON.stringify(SY))}catch(e){}}
+function snap(){return{app:'household-calendar',version:1,members:S.members,tasks:S.tasks,trash:S.trash,pin:S.pin||''}}
+function snapStr(){return JSON.stringify(snap())}
+function fileStr(){return JSON.stringify(snap(),null,2)+'\n'}
+var EMPTY=JSON.stringify({app:'household-calendar',version:1,members:[],tasks:[],trash:[],pin:''});
+function dirty(){return snapStr()!==(SY.base||EMPTY)}
+function updSync(){var b=$('#up');if(!b)return;b.hidden=!(dirty()&&(isAdmin()||!!mem(ME)))}
+var RX_ID=/^[A-Za-z0-9_-]{1,40}$/,RX_D=/^\d{4}-\d{2}-\d{2}$/,RX_T=/^\d{2}:\d{2}$/,RX_C=/^#[0-9a-fA-F]{6}$/;
+function sid(v){return typeof v==='string'&&RX_ID.test(v)?v:null}
+function sd(v){return typeof v==='string'&&RX_D.test(v)&&!isNaN(parse(v))?v:null}
+function stm(v){return typeof v==='string'&&RX_T.test(v)&&+v.slice(0,2)<25&&+v.slice(3)<60?v:null}
+function sn(v,a,b,d){v=parseInt(v);return isNaN(v)?d:Math.max(a,Math.min(b,v))}
+function ss(v,n){return typeof v==='string'?v.slice(0,n):''}
+function sh(v){return typeof v==='string'&&/^-?\d{1,12}$/.test(v)?v:''}
+function clean(d){
+ if(!d||typeof d!=='object'||!Array.isArray(d.members)||!Array.isArray(d.tasks))return null;
+ var ids=Object.create(null),o={members:[],tasks:[],trash:[],pin:sh(d.pin)};
+ d.members.slice(0,50).forEach(function(m){
+  if(!m||typeof m!=='object')return;var id=sid(m.id),an=sd(m.anchor),len=sn(m.len,1,60,7);if(!id||!an||ids[id])return;ids[id]=1;
+  var hh=[];for(var i=0;i<len;i++){var w=m.hours&&m.hours[i];hh.push(Array.isArray(w)&&stm(w[0])&&stm(w[1])?[w[0],w[1],ss(w[2],40)]:null)}
+  var off=[];(Array.isArray(m.off)?m.off:[]).slice(0,400).forEach(function(x){if(x&&sid(x.id)&&sd(x.from)&&sd(x.to)&&(x.type==='Vacation'||x.type==='Day off'))off.push({id:x.id,type:x.type,from:x.from,to:x.to})});
+  o.members.push({id:id,name:ss(m.name,60)||'?',color:RX_C.test(m.color)?m.color:'#2b8c6e',len:len,anchor:an,hours:hh,unemployed:!!m.unemployed,pin:sh(m.pin),off:off})});
+ d.tasks.slice(0,5000).forEach(function(t){
+  if(!t||typeof t!=='object')return;var id=sid(t.id),dt=sd(t.date);if(!id||!dt)return;
+  var dn={};if(t.done&&typeof t.done==='object')Object.keys(t.done).slice(0,800).forEach(function(k){if(RX_D.test(k)&&t.done[k])dn[k]=true});
+  o.tasks.push({id:id,title:ss(t.title,200),date:dt,time:t.time?(stm(t.time)||''):'',dur:sn(t.dur,0,1440,0),who:ids[t.who]?t.who:'',type:TYPES.indexOf(t.type)>-1?t.type:'Other',repeat:['none','daily','weekly'].indexOf(t.repeat)>-1?t.repeat:'none',done:dn})});
+ (Array.isArray(d.trash)?d.trash:[]).slice(0,30).forEach(function(z){
+  if(!z||typeof z!=='object')return;var id=sid(z.id),st=sd(z.start);if(!id||!st)return;
+  var dl=function(a){return(Array.isArray(a)?a:[]).filter(function(x){return sd(x)}).slice(0,800)};
+  o.trash.push({id:id,name:ss(z.name,60)||'?',color:RX_C.test(z.color)?z.color:'#8a8f8c',start:st,weeks:sn(z.weeks,0,12,0),time:z.time?(stm(z.time)||''):'',extra:dl(z.extra),skip:dl(z.skip)})});
+ return o}
+function adopt(o,fsha,csha){S.members=o.members;S.tasks=o.tasks;S.trash=o.trash;S.pin=o.pin;save();if(fsha!==undefined){SY={base:snapStr(),fileSha:fsha,commit:csha,at:Date.now()};saveSY();updSync()}}
+function confirmM(title,msg,ok,yes,no){openM('<h2>'+esc(title)+'</h2><div class="empty">'+esc(msg)+'</div><div class="acts"><span class="sp"></span><button id="cfn">'+L('Cancel')+'</button><button class="p" id="cfk">'+esc(ok)+'</button></div>');$('#cfn').onclick=function(){closeM();if(no)no()};$('#cfk').onclick=function(){closeM();yes()}}
+function ask(t,m,ok){return new Promise(function(res){confirmM(t,m,ok,function(){res(true)},function(){res(false)})})}
+function exportJSON(){var o=snap();o.exportedAt=new Date().toISOString();var u=URL.createObjectURL(new Blob([JSON.stringify(o,null,2)+'\n'],{type:'application/json'})),a=document.createElement('a');a.href=u;a.download='data.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},3000);toast(L('Data exported.'),'data.json')}
+function importJSON(){
+ if(!isAdmin()){denied();return}
+ var f=document.createElement('input');f.type='file';f.accept='.json,application/json';
+ f.onchange=function(){var fl=f.files[0];if(!fl)return;var r=new FileReader();
+  r.onload=function(){var d;try{d=JSON.parse(r.result)}catch(e){}var c=clean(d);
+   if(!c){toast(L('Import failed'),L('That file is not valid data.json for this app.'));return}
+   confirmM(L('Replace current data?'),L('This file contains')+' '+c.members.length+' '+L('members')+', '+c.tasks.length+' '+L('tasks')+', '+c.trash.length+' '+L('trash types')+'.',L('Replace'),function(){adopt(c);render();toast(L('Data imported.'),'')})};
+  r.readAsText(fl)};
+ f.click()}
+function ghOK(){return !!GH.repo&&/^[\w.-]+\/[\w.-]+$/.test(GH.repo)}
+function ghFetch(path,opt){opt=opt||{};var h={'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};if(GH.token)h.Authorization='Bearer '+GH.token;if(opt.body)h['Content-Type']='application/json';
+ return fetch('https://api.github.com/repos/'+GH.repo+path,{method:opt.method||'GET',headers:h,body:opt.body}).then(function(r){if(r.ok)return r.json();var e=new Error('http');e.status=r.status;throw e})}
+function ghErr(e){var s=e&&e.status;return s===401?L('Token rejected by GitHub.'):s===403?L('No permission: the token needs Contents read and write access.'):s===404?L('Repository, branch main or data.json not found.'):s?L('GitHub error')+' ('+s+')':L('Could not reach GitHub.')}
+function b64(str){var b=new TextEncoder().encode(str),s='';for(var i=0;i<b.length;i+=8192)s+=String.fromCharCode.apply(null,b.subarray(i,i+8192));return btoa(s)}
+function unb64(s){var t=atob(s.replace(/\s/g,'')),b=new Uint8Array(t.length);for(var i=0;i<t.length;i++)b[i]=t.charCodeAt(i);return new TextDecoder().decode(b)}
+function busy(b,on){b.classList.toggle('spin',on);b.disabled=on}
+async function pullGH(){
+ var b=$('#upd');
+ if(!ghOK()){if(isAdmin())dataM();else toast(L('Sync failed'),L('Sync is not set up. Ask the admin to add the repository.'));return}
+ if(b.disabled)return;busy(b,true);
+ try{
+  var c=await ghFetch('/commits/main?t='+Date.now());
+  if(c.sha===SY.commit){toast(L('Already up to date'),'');return}
+  var f=await ghFetch('/contents/data.json?ref=main&t='+Date.now());
+  if(f.sha===SY.fileSha){SY.commit=c.sha;saveSY();toast(L('Already up to date'),'');return}
+  var d;try{if(f.encoding==='base64'&&f.content)d=JSON.parse(unb64(f.content))}catch(e){}
+  var o=clean(d);if(!o){toast(L('Sync failed'),L('That file is not valid data.json for this app.'));return}
+  if(dirty()){busy(b,false);var ok=await ask(L('Check for updates'),L('Local changes that are not uploaded will be replaced by the repository version. Continue?'),L('Continue'));if(!ok)return;busy(b,true)}
+  adopt(o,f.sha,c.sha);
+  try{sessionStorage.setItem('hh-keep',ME)}catch(e){}
+  toast(L('Updated'),L('Reloading…'));setTimeout(function(){location.reload()},700);
+ }catch(e){toast(L('Sync failed'),ghErr(e))}finally{busy(b,false)}
+}
+async function pushGH(){
+ var b=$('#up');
+ if(!ghOK()||!GH.token){if(isAdmin())dataM();else toast(L('Sync failed'),L('Sync is not set up. Ask the admin to add the repository.'));return}
+ if(b.disabled)return;busy(b,true);
+ try{
+  var f=null;try{f=await ghFetch('/contents/data.json?ref=main&t='+Date.now())}catch(e){if(e.status!==404)throw e}
+  if(f&&f.sha!==SY.fileSha){busy(b,false);var ok=await ask(L('Overwrite'),L('The repository has newer changes. Overwrite them with your version?'),L('Overwrite'));if(!ok)return;busy(b,true)}
+  var body={message:'Update data.json (Household Calendar)',content:b64(fileStr()),branch:'main'};if(f)body.sha=f.sha;
+  var r=await ghFetch('/contents/data.json',{method:'PUT',body:JSON.stringify(body)});
+  SY={base:snapStr(),fileSha:r.content.sha,commit:r.commit.sha,at:Date.now()};saveSY();updSync();
+  toast(L('Uploaded'),L('Your changes are on GitHub.'));
+ }catch(e){toast(L('Sync failed'),ghErr(e))}finally{busy(b,false)}
+}
+function installApp(){if(deferredInstall){deferredInstall.prompt();deferredInstall=null;buildMenu()}}
+function dataM(){
+ var ad=isAdmin(),ok=ghOK(),h='<h2>'+L('Data & sync')+'</h2><div class="sub">'+L('Backup')+'</div><div class="row"><button id="dxp">'+L('Export data.json')+'</button><button id="dim"'+(ad?'':' disabled')+'>'+L('Import data.json')+'</button></div>'+(ad?'':'<div class="meta" style="margin-top:6px">'+L('Only the admin can import data.')+'</div>')+'<div class="sub">'+L('GitHub sync')+'</div>';
+ if(ad)h+='<label>'+L('Repository (owner/name)')+'</label><input type="text" id="gr" value="'+esc(GH.repo||'')+'" placeholder="owner/repository" autocapitalize="off" autocorrect="off" spellcheck="false"><label>'+L('Access token')+'</label><input type="password" id="gt" autocomplete="off" placeholder="'+(GH.token?'\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022':'github_pat_...')+'"><div class="meta warn" id="ge" style="margin-top:6px"></div>';
+ else h+='<div class="meta">'+(ok?L('Connected to')+' '+esc(GH.repo):L('Not set up'))+'. '+L('Only the admin can change the sync settings.')+'</div>';
+ h+='<div class="meta" style="margin-top:8px">'+L('Branch: main. File: data.json. Use a private repository: data.json contains names and PIN codes. The token stays on this device and is never written to data.json.')+'</div><div class="meta" style="margin-top:4px">'+L('Last synced')+': '+(SY.at?new Date(SY.at).toLocaleString(loc()):L('Never'))+'</div>';
+ h+='<div class="acts">'+(ad&&ok?'<button class="d" id="gd">'+L('Disconnect')+'</button>':'')+'<span class="sp"></span><button id="cl">'+L('Done')+'</button>'+(ad?'<button class="p" id="gs">'+L('Save')+'</button>':'')+'</div>';
+ openM(h);
+ $('#dxp').onclick=exportJSON;$('#dim').onclick=importJSON;
+ if(ad){
+  $('#gs').onclick=function(){var r=$('#gr').value.trim().replace(/^https?:\/\/github\.com\//,'').replace(/\.git$/,'').replace(/\/$/,''),t=$('#gt').value.trim();
+   if(!/^[\w.-]+\/[\w.-]+$/.test(r)){$('#ge').textContent=L('Use the format owner/name.');return}
+   if(GH.repo!==r){SY.commit='';SY.fileSha='';saveSY()}
+   GH.repo=r;if(t)GH.token=t;saveGH();closeM();toast(L('Saved'),r)};
+  if(ok)$('#gd').onclick=function(){GH={};saveGH();SY.commit='';SY.fileSha='';saveSY();dataM()};
+ }
+}
+$('#upd').onclick=pullGH;$('#up').onclick=pushGH;
+setInterval(checkNotif,30000);
+document.addEventListener('visibilitychange',function(){if(!document.hidden)checkNotif()});
+if(ME!=='admin'&&ME!=='guest'&&!mem(ME))ME='guest';
+
+setTimeout(checkNotif,500);
+statics();render();
+</script>
+</body>
+</html>
